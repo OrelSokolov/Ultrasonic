@@ -7,15 +7,18 @@
   #include "WProgram.h"
 #endif
 
-#define CM 1
-#define INC 0
-
 class Ultrasonic
 {
   public:
+    static volatile int time;
+    static volatile int result_time;
+
+
     Ultrasonic(int trig_pin, int echo_pin);
     void   SendPulse();
     double Ranging();
+    static void   onRisingEcho();
+    static void   onFallingEcho();
 
   private:
     int trig_pin;
