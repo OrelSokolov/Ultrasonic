@@ -1,34 +1,31 @@
 // Us2.ino
 #include "Ultrasonic.h"
 
-Ultrasonic us(12, 2);
+#define BOARD UNO
 
-float koef(float x){
-  const float K = 0.00016;
-  const float B = 55.9;
+#if (BOARD == UNO)
+  #define ULTRASONIC_PIN_TRIG 12
+  #define ULTRASONIC_PIN_ECHO 2
+  #define ULTRASONIC_INTERRUPT_NUMBER 0
+  #define SERIAL_SPEED 9600
+#elif (BOARD == NANO)
 
-  // float result = K*x+B;
-  // Serial.print("result: ");
-  // Serial.println(result);
-  // return result;
-  return K*x+B;
-}
+
+#endif
+
+
+Ultrasonic us(ULTRASONIC_PIN_TRIG, ULTRASONIC_PIN_ECHO, ULTRASONIC_INTERRUPT_NUMBER);
+
 
 void setup() {
-    Serial.begin(9600);             // start the serial port
-    pinMode(13, OUTPUT);
-    digitalWrite(13, LOW);
-    Serial.println("Hello");
+  Serial.begin(SERIAL_SPEED);
+  Serial.println("Setup done. Starting...");
 }
 
 void loop()
 {
-  us.SendPulse();
+  us.UpdateDistanceAsync();
   delay(1000);
-  Serial.print("Time: ");
-  float _time = float(Ultrasonic::result_time);
-  Serial.println(_time);
-  float dist = _time/koef(_time);
+  float dist = us.Ranging();
   Serial.println(dist);
-  Ultrasonic::result_time = 0;
 }
