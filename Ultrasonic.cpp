@@ -2,37 +2,44 @@
 
 typedef  void (Ultrasonic::*UltrasonicMemFn)();
 
-volatile int Ultrasonic::echo_delay_time=0;
-volatile int Ultrasonic::result_time=0;
 Ultrasonic* Ultrasonic::lock=NULL;
 
 void ultrasonic_on_rising_echo_wrapper(){
   Ultrasonic::lock->onRisingEcho();
 }
 
+void ultrasonic_on_falling_echo_wrapper(){
+  Ultrasonic::lock->onFallingEcho();
+}
+
 Ultrasonic Ultrasonic::initialize(int trig_arg, int echo_arg, byte interrupt_number_arg, float K_arg, float B_arg ){
   void (*ultrasonic_on_rising_echo_wrapper_ptr)() = ultrasonic_on_rising_echo_wrapper;
+  void (*ultrasonic_on_falling_echo_wrapper_ptr)() = ultrasonic_on_falling_echo_wrapper;
 
-  Ultrasonic temp(trig_arg, echo_arg, interrupt_number_arg, ultrasonic_on_rising_echo_wrapper_ptr, K_arg, B_arg );
+  Ultrasonic temp(trig_arg, echo_arg, interrupt_number_arg, ultrasonic_on_rising_echo_wrapper_ptr, ultrasonic_on_falling_echo_wrapper_ptr, K_arg, B_arg );
 
   return temp;
 }
 
-Ultrasonic::Ultrasonic(int trig_arg, int echo_arg, byte interrupt_number_arg, void (*on_echo_ptr)(), float K_arg, float B_arg )
+Ultrasonic::Ultrasonic(int trig_arg, int echo_arg, byte interrupt_number_arg, void (*on_rising_ptr)(), void (*on_falling_ptr)(), float K_arg, float B_arg )
 {
+   echo_delay_time=0;
+   result_time=0;
+
    trig_pin = trig_arg;
    echo_pin = echo_arg;
    interrupt_number = interrupt_number_arg;
    K = K_arg;
    B = B_arg;
-   on_rising_echo_wrapper = on_echo_ptr;
+   on_rising_echo_wrapper = on_rising_ptr;
+   on_falling_echo_wrapper = on_falling_ptr;
 
    pinMode(trig_pin, OUTPUT);
    pinMode(echo_pin, INPUT);
 }
 
 void Ultrasonic::ResetEchoDelay(){
-  Ultrasonic::echo_delay_time=0;
+  echo_delay_time=0;
 }
 
 void Ultrasonic::SendPulse(byte delay_us){
@@ -52,15 +59,15 @@ void Ultrasonic::UpdateDistanceAsync(){
 }
 
 void Ultrasonic::onRisingEcho(){
-  detachInterrupt(0);
-  Ultrasonic::echo_delay_time=micros();
-  attachInterrupt(0, onFallingEcho, FALLING);
+  detachInterrupt(interrupt_number);
+  echo_delay_time=micros();
+  attachInterrupt(interrupt_number, on_falling_echo_wrapper, FALLING);
 }
 
 void Ultrasonic::onFallingEcho(){
-  if(Ultrasonic::echo_delay_time!=0){
-    int echo_length=micros()-Ultrasonic::echo_delay_time;
-    Ultrasonic::result_time=(echo_length/10)*10;
+  if(echo_delay_time!=0){
+    int echo_length=micros()-echo_delay_time;
+    result_time=(echo_length/10)*10;
   }
 }
 
@@ -70,7 +77,7 @@ float Ultrasonic::koef(float x){
 
 double Ultrasonic::Ranging()
 {
-  long _time = Ultrasonic::result_time;
+  long _time = result_time;
   distacne_cm = _time/koef(_time);
   return distacne_cm;
 }
