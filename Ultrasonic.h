@@ -13,12 +13,22 @@ class Ultrasonic
   public:
     static const float INF_DIST=99999.999;
     static volatile int result_time;
+    static Ultrasonic* lock;
+
+    static bool try_acquire(Ultrasonic*);
+    static bool try_free(Ultrasonic*);
 
 
-    Ultrasonic(int trig_pin, int echo_pin, byte interrupt_number, float K_arg=0.00016, float B_arg = 55.9);
+    void (*on_rising_echo_wrapper)();
+
+
+    static Ultrasonic initialize(int trig_pin, int echo_pin, byte interrupt_number, float K_arg=0.00016, float B_arg = 55.9);
+
+    Ultrasonic(int trig_pin, int echo_pin, byte interrupt_number, void (*)() , float K_arg=0.00016, float B_arg = 55.9);
+
     void   UpdateDistanceAsync();
     double Ranging();
-    static void   onRisingEcho();
+    void   onRisingEcho();
     static void   onFallingEcho();
 
   private:

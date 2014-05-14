@@ -1,15 +1,31 @@
 #include "Ultrasonic.h"
 
+typedef  void (Ultrasonic::*UltrasonicMemFn)();
+
 volatile int Ultrasonic::echo_delay_time=0;
 volatile int Ultrasonic::result_time=0;
+Ultrasonic* Ultrasonic::lock=NULL;
 
-Ultrasonic::Ultrasonic(int trig_arg, int echo_arg, byte interrupt_number_arg, float K_arg, float B_arg )
+void ultrasonic_on_rising_echo_wrapper(){
+  Ultrasonic::lock->onRisingEcho();
+}
+
+Ultrasonic Ultrasonic::initialize(int trig_arg, int echo_arg, byte interrupt_number_arg, float K_arg, float B_arg ){
+  void (*ultrasonic_on_rising_echo_wrapper_ptr)() = ultrasonic_on_rising_echo_wrapper;
+
+  Ultrasonic temp(trig_arg, echo_arg, interrupt_number_arg, ultrasonic_on_rising_echo_wrapper_ptr, K_arg, B_arg );
+
+  return temp;
+}
+
+Ultrasonic::Ultrasonic(int trig_arg, int echo_arg, byte interrupt_number_arg, void (*on_echo_ptr)(), float K_arg, float B_arg )
 {
    trig_pin = trig_arg;
    echo_pin = echo_arg;
    interrupt_number = interrupt_number_arg;
    K = K_arg;
    B = B_arg;
+   on_rising_echo_wrapper = on_echo_ptr;
 
    pinMode(trig_pin, OUTPUT);
    pinMode(echo_pin, INPUT);
@@ -29,7 +45,8 @@ void Ultrasonic::SendPulse(byte delay_us){
 
 void Ultrasonic::UpdateDistanceAsync(){
   // delay(10);
-  attachInterrupt(interrupt_number, onRisingEcho, RISING);
+  Ultrasonic::lock = this;
+  attachInterrupt(interrupt_number, on_rising_echo_wrapper, RISING);
   ResetEchoDelay();
   SendPulse(10);
 }
