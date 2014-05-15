@@ -1,7 +1,5 @@
 #include "Ultrasonic.h"
 
-typedef  void (Ultrasonic::*UltrasonicMemFn)();
-
 Ultrasonic* Ultrasonic::lock=NULL;
 
 void ultrasonic_on_rising_echo_wrapper(){
@@ -16,9 +14,7 @@ Ultrasonic Ultrasonic::create(int trig_arg, int echo_arg, byte interrupt_number_
   void (*ultrasonic_on_rising_echo_wrapper_ptr)() = ultrasonic_on_rising_echo_wrapper;
   void (*ultrasonic_on_falling_echo_wrapper_ptr)() = ultrasonic_on_falling_echo_wrapper;
 
-  Ultrasonic temp(trig_arg, echo_arg, interrupt_number_arg, ultrasonic_on_rising_echo_wrapper_ptr, ultrasonic_on_falling_echo_wrapper_ptr, K_arg, B_arg );
-
-  return temp;
+  return Ultrasonic(trig_arg, echo_arg, interrupt_number_arg, ultrasonic_on_rising_echo_wrapper_ptr, ultrasonic_on_falling_echo_wrapper_ptr, K_arg, B_arg );
 }
 
 Ultrasonic::Ultrasonic(int trig_arg, int echo_arg, byte interrupt_number_arg, void (*on_rising_ptr)(), void (*on_falling_ptr)(), float K_arg, float B_arg )
