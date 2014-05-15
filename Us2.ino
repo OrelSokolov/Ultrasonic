@@ -13,7 +13,7 @@
 
 #endif
 
-Ultrasonic us = Ultrasonic::initialize(ULTRASONIC_PIN_TRIG, ULTRASONIC_PIN_ECHO, ULTRASONIC_INTERRUPT_NUMBER);
+Ultrasonic us = Ultrasonic::create(ULTRASONIC_PIN_TRIG, ULTRASONIC_PIN_ECHO, ULTRASONIC_INTERRUPT_NUMBER);
 
 
 void setup() {
@@ -25,6 +25,6 @@ void loop()
 {
   us.UpdateDistanceAsync();
   delay(1000);
-  float dist = us.Ranging();
+  float dist = us.getDistance();
   Serial.println(dist);
 }

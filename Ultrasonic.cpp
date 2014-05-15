@@ -12,7 +12,7 @@ void ultrasonic_on_falling_echo_wrapper(){
   Ultrasonic::lock->onFallingEcho();
 }
 
-Ultrasonic Ultrasonic::initialize(int trig_arg, int echo_arg, byte interrupt_number_arg, float K_arg, float B_arg ){
+Ultrasonic Ultrasonic::create(int trig_arg, int echo_arg, byte interrupt_number_arg, float K_arg, float B_arg ){
   void (*ultrasonic_on_rising_echo_wrapper_ptr)() = ultrasonic_on_rising_echo_wrapper;
   void (*ultrasonic_on_falling_echo_wrapper_ptr)() = ultrasonic_on_falling_echo_wrapper;
 
@@ -51,11 +51,12 @@ void Ultrasonic::SendPulse(byte delay_us){
 }
 
 void Ultrasonic::UpdateDistanceAsync(){
-  // delay(10);
-  Ultrasonic::lock = this;
-  attachInterrupt(interrupt_number, on_rising_echo_wrapper, RISING);
-  ResetEchoDelay();
-  SendPulse(10);
+  if(Ultrasonic::lock==NULL){
+    Ultrasonic::lock = this;
+    attachInterrupt(interrupt_number, on_rising_echo_wrapper, RISING);
+    ResetEchoDelay();
+    SendPulse(10);
+  }
 }
 
 void Ultrasonic::onRisingEcho(){
@@ -69,13 +70,14 @@ void Ultrasonic::onFallingEcho(){
     int echo_length=micros()-echo_delay_time;
     result_time=(echo_length/10)*10;
   }
+  Ultrasonic::lock=NULL;
 }
 
 float Ultrasonic::koef(float x){
   return K*x+B;
 }
 
-double Ultrasonic::Ranging()
+double Ultrasonic::getDistance()
 {
   long _time = result_time;
   distacne_cm = _time/koef(_time);

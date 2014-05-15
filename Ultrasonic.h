@@ -23,12 +23,12 @@ class Ultrasonic
     void (*on_falling_echo_wrapper)();
 
 
-    static Ultrasonic initialize(int trig_pin, int echo_pin, byte interrupt_number, float K_arg=0.00016, float B_arg = 55.9);
+    static Ultrasonic create(int trig_pin, int echo_pin, byte interrupt_number, float K_arg=0.00016, float B_arg = 55.9);
 
     Ultrasonic(int trig_pin, int echo_pin, byte interrupt_number, void (*)() , void (*)(), float K_arg=0.00016, float B_arg = 55.9);
 
     void   UpdateDistanceAsync();
-    double Ranging();
+    double getDistance();
     void   onRisingEcho();
     void   onFallingEcho();
 
