@@ -1,4 +1,5 @@
 #include "Ultrasonic.h"
+#include <TimerOne.h>
 
 Ultrasonic* Ultrasonic::lock=NULL;
 
@@ -10,9 +11,17 @@ void ultrasonic_on_falling_echo_wrapper(){
   Ultrasonic::lock->onFallingEcho();
 }
 
+void ultrasonic_on_timeout_wrapper(){
+  Ultrasonic::lock->onTimeOut();
+}
+
+
 Ultrasonic Ultrasonic::create(int trig_arg, int echo_arg, byte interrupt_number_arg, float K_arg, float B_arg ){
   void (*ultrasonic_on_rising_echo_wrapper_ptr)() = ultrasonic_on_rising_echo_wrapper;
   void (*ultrasonic_on_falling_echo_wrapper_ptr)() = ultrasonic_on_falling_echo_wrapper;
+  Timer1.initialize(30000);
+  Timer1.attachInterrupt(ultrasonic_on_timeout_wrapper);
+  Timer1.stop();
 
   return Ultrasonic(trig_arg, echo_arg, interrupt_number_arg, ultrasonic_on_rising_echo_wrapper_ptr, ultrasonic_on_falling_echo_wrapper_ptr, K_arg, B_arg );
 }
@@ -52,10 +61,20 @@ void Ultrasonic::UpdateDistanceAsync(){
     attachInterrupt(interrupt_number, on_rising_echo_wrapper, RISING);
     ResetEchoDelay();
     SendPulse(10);
+    Timer1.start();
   }
 }
 
+void Ultrasonic::onTimeOut(){
+  detachInterrupt(interrupt_number);
+  Timer1.stop();
+  Serial.println("Timeout");
+  result_time = Ultrasonic::INF_TIME;
+  Ultrasonic::lock=NULL;
+}
+
 void Ultrasonic::onRisingEcho(){
+  Timer1.stop();
   detachInterrupt(interrupt_number);
   echo_delay_time=micros();
   attachInterrupt(interrupt_number, on_falling_echo_wrapper, FALLING);
@@ -66,6 +85,7 @@ void Ultrasonic::onFallingEcho(){
     int echo_length=micros()-echo_delay_time;
     result_time=(echo_length/10)*10;
   }
+  detachInterrupt(interrupt_number);
   Ultrasonic::lock=NULL;
 }
 
@@ -75,7 +95,17 @@ float Ultrasonic::koef(float x){
 
 double Ultrasonic::getDistance()
 {
-  long _time = result_time;
-  distacne_cm = _time/koef(_time);
-  return distacne_cm;
+  if(result_time!=Ultrasonic::INF_TIME){
+    long _time = result_time;
+    distance_cm = _time/koef(_time);
+    return distance_cm;
+  }else{
+    distance_cm = Ultrasonic::INF_DIST;
+    return distance_cm;
+  }
+}
+
+bool Ultrasonic::is_infinity()
+{
+  return (distance_cm == Ultrasonic::INF_DIST);
 }
